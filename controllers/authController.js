@@ -1,8 +1,17 @@
 const bcrypt = require("bcrypt");
+const Joi = require("joi");
 
 const User = require("../models/UserModel");
 
 exports.userRegister = async (req, res) => {
+  const schema = Joi.object({
+    username: Joi.string().min(3).max(40).required(),
+    email: Joi.string().min(3).max(40).email().required(),
+    password: Joi.string().min(8).max(300).required(),
+  });
+  const { error } = schema.validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   const { username, email, password, profilePic } = req.body;
 
   try {
@@ -19,7 +28,7 @@ exports.userRegister = async (req, res) => {
       profilePic,
     });
     const user = await newUser.save();
-    res.status(200).send(user._id, user.email);
+    res.status(200).send({ Success: "User successfully saved" });
   } catch (error) {
     res.status(500).send(error);
   }
