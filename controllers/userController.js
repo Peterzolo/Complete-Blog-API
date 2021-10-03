@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 
+const Post = require("../models/PostModel");
 const User = require("../models/UserModel");
 
 exports.userRegister = async (req, res) => {
@@ -78,22 +79,63 @@ exports.userLogIn = async (req, res) => {
   }
 };
 
-
-exports.userUpdate = async(req, res) =>{
-   
-  if(req.body.userId === req.params.id){
-    if(req.body.password){
-      const salt = await bcrypt.genSalt(10)
+exports.userUpdate = async (req, res) => {
+  if (req.body.userId === req.params.id) {
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(10);
       req.body.password = await bcrypt.hash(req.body.password, salt);
     }
     try {
-      const updatedUser = await User.findByIdAndUpdate(req.params.id, { $set : req.body})   
-      res.status(200).send(updatedUser)
+      const updatedUser = await User.findByIdAndUpdate(
+        req.params.id,
+        { $set: req.body },
+        { new: true }
+      );
+      res.status(200).send(updatedUser);
     } catch (error) {
-      res.status(500).send(error)
+      res.status(500).send(error);
     }
-  }else{
-   res.status(400).send("Sorry you are not authorized")
+  } else {
+    res.status(400).send("Sorry you are not authorized");
   }
+};
 
-}
+exports.deleteUser = async (req, res) => {
+  if (req.body.userId === req.params.id) {
+    try {
+      const user = await User.findById(req.params.id);
+
+      try {
+        await Post.deleteMany({ username: user.username });
+        await User.findByIdAndDelete(req.params.id);
+        res.status(200).send("User successfully deleted");
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    } catch (error) {
+      res.status(400).send("Not found");
+    }
+  } else {
+    res.status(400).send("Sorry, but you have no permission to perform this");
+  }
+};
+
+exports.getSingleUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    const { password, ...others } = user._doc;
+    res.status(200).send(others);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+};
+
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    if (users.length < 1) return res.status(401).send("No user found");
+    res.status(200).send(users);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+};
