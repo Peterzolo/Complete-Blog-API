@@ -4,8 +4,9 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const morgan = require("morgan");
 
-const databaseCon = require("./config/database");
-const userRouter = require("./routes/authRoute");
+const databaseCon = require("./config/database");  
+const userRouter = require("./routes/userRoute");
+
 
 
 const app = express();
@@ -25,5 +26,5 @@ databaseCon();
 const PORT = 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server Started on port ${PORT}`);
+  console.log(`Server Started on port ${PORT}`);   
 });
