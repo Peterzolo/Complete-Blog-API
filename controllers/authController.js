@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/UserModel");
 
@@ -28,8 +29,51 @@ exports.userRegister = async (req, res) => {
       profilePic,
     });
     const user = await newUser.save();
-    res.status(200).send({ Success: "User successfully saved" });
+
+    const payload = {
+      _id: user._id,
+      email: user.email,
+    };
+
+    const secretKeys = process.env.JWT_KEY;
+
+    const token = jwt.sign(payload, secretKeys, { expiresIn: "1h" });
+    res.status(200).send({ Success: token });
+
+    //res.status(200).send(token);
   } catch (error) {
     res.status(500).send(error);
+  }
+};
+
+exports.userLogIn = async (req, res) => {
+  const schema = Joi.object({
+    username: Joi.string().min(3).max(40).required(),
+    email: Joi.string().min(3).max(40).email().required(),
+    password: Joi.string().min(8).max(300).required(),
+  });
+  const { error } = schema.validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+  try {
+    let user = await User.findOne({ username: req.body.username });
+    if (!user) return res.status(400).send("Wrong Username or password");
+
+    const validPassword = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
+    if (!validPassword) return res.status(400).send("Password incorrect");
+
+    const payload = {
+      _id: user._id,
+      email: user.email,
+    };
+
+    const secretKeys = process.env.JWT_KEY;
+    const token = jwt.sign(payload, secretKeys);
+    res.send({ Success: token });
+  } catch (error) {
+    res.status(500).send(error.message);
+    console.log(error.message);
   }
 };
