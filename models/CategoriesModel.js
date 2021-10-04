@@ -10,6 +10,6 @@ const CategorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Categories = mongoose.model("user", CategorySchema);
+const Categories = mongoose.model("category", CategorySchema);
 
 module.exports = Categories;
